@@ -17,10 +17,10 @@ min_level = np.exp(-100 / 20 * np.log(10))
 b, a = butter_highpass(30, 16000, order=5)
  
 # Modify as needed
-rootDir = 'assets/wavs'
+rootDir = 'assets/LibriSpeech/dev-clean'
 targetDir_f0 = 'assets/raptf0'
 targetDir = 'assets/spmel'
-spk2genFile = 'assets/spk2gen.pkl'
+spk2genFile = 'assets/ls_spk2gen.pkl'
 
 spk2gen = pickle.load(open(spk2genFile, "rb"))
    
@@ -45,6 +45,8 @@ for subdir in sorted(subdirList):
         
     prng = RandomState(int(subdir[1:])) 
     for fileName in sorted(fileList):
+        if '.flac' not in fileName:
+            continue
         # read audio file
         x, fs = sf.read(os.path.join(dirName,subdir,fileName))
         assert fs == 16000
