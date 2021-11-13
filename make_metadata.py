@@ -17,6 +17,7 @@ for speaker in sorted(subdirList):
     # use hardcoded onehot embeddings in order to be cosistent with the test speakers
     # modify as needed
     # may use generalized speaker embedding for zero-shot conversion
+    # TODO(Rohan, Karthik): use ls_spk2emb to generate one hot embeddings for training (if needed)
     spkid = np.zeros((82,), dtype=np.float32)
     if speaker == 'p226':
         spkid[1] = 1.0

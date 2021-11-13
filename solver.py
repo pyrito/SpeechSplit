@@ -100,7 +100,77 @@ class Solver(object):
         """Reset the gradient buffers."""
         self.g_optimizer.zero_grad()
       
-    
+    def encode_context(self):
+        # Set data loader.
+        data_loader = self.vcc_loader
+        
+        # Fetch fixed inputs for debugging.
+        data_iter = iter(data_loader)
+        
+        # Start encoding from scratch or resume from checkpoint.
+        start_iters = 0
+        if self.resume_iters:
+            print('Resuming ...')
+            start_iters = self.resume_iters
+            self.num_iters += self.resume_iters
+            self.restore_model(self.resume_iters)
+            # self.print_optimizer(self.g_optimizer, 'G_optimizer')
+                        
+        # Learning rate cache for decaying.
+        # g_lr = self.g_lr
+        # print ('Current learning rates, g_lr: {}.'.format(g_lr))
+        
+        # Print logs in specified order
+        keys = ['G/loss_id']
+            
+        # Start encoding.
+        print('Start encoding...')
+        start_time = time.time()
+
+        # May need this if looping doesn't work: 
+        # for i in max(range(start_iters, self.num_iters), len(self.vcc_loader)):
+
+        for x_real_org, emb_org, f0_org, len_org in self.vcc_loader:
+
+            # =================================================================================== #
+            #                             1. Send input data to device                            #
+            # =================================================================================== #
+
+            # Fetch real images and labels.
+            # try:
+            #     x_real_org, emb_org, f0_org, len_org = next(data_iter)
+            # except:
+            #     data_iter = iter(data_loader)
+            #     x_real_org, emb_org, f0_org, len_org = next(data_iter)
+            
+            x_real_org = x_real_org.to(self.device)
+            emb_org = emb_org.to(self.device)
+            len_org = len_org.to(self.device)
+            f0_org = f0_org.to(self.device)
+            
+                    
+            # =================================================================================== #
+            #                               2. Encode using the generator                         #
+            # =================================================================================== #
+            
+            self.G = self.G.eval()
+                        
+            # Identity mapping loss
+            x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
+            x_f0_intrp = self.Interp(x_f0, len_org) 
+            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:,:,-1])[0]
+            x_f0_intrp_org = torch.cat((x_f0_intrp[:,:,:-1], f0_org_intrp), dim=-1)
+            
+            code_content, code_pitch, code_rhythm, speaker_emb = self.G.forward_encode(x_f0_intrp_org, x_real_org, emb_org)
+            print(f'content: {code_content}')
+
+            et = time.time() - start_time
+            et = str(datetime.timedelta(seconds=et))[:-7]
+            log = "Elapsed [{}], Iteration [{}/{}]".format(et, i+1, self.num_iters)
+            print(log)
+
+
+
 #=====================================================================================================================
     
     
@@ -131,6 +201,7 @@ class Solver(object):
         # Start training.
         print('Start training...')
         start_time = time.time()
+        
         for i in range(start_iters, self.num_iters):
 
             # =================================================================================== #

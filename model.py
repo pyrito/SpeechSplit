@@ -311,7 +311,27 @@ class Generator_3(nn.Module):
         mel_outputs = self.decoder(encoder_outputs)
         
         return mel_outputs
+
+    def forward_encode(self, x_f0, x_org, c_trg):
+        x_1 = x_f0.transpose(2,1)
+        codes_x, codes_f0 = self.encoder_1(x_1)
+        
+        x_2 = x_org.transpose(2,1)
+        codes_2 = self.encoder_2(x_2, None)
+        
+        return codes_x, codes_f0, codes_2, c_trg
     
+    def content(self, x_f0):
+        x_1 = x_f0.transpose(2,1)
+        codes_x, _ = self.encoder_1(x_1)
+                
+        return codes_x
+
+    def pitch(self, x_f0):
+        x_1 = x_f0.transpose(2,1)
+        _, codes_f0 = self.encoder_1(x_1)
+        
+        return codes_f0
     
     def rhythm(self, x_org):
         x_2 = x_org.transpose(2,1)
