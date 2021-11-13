@@ -8,6 +8,7 @@ from numpy.random import uniform
 from multiprocessing import Process, Manager  
 
 from torch.utils import data
+from torch.utils.data import dataloader
 from torch.utils.data.sampler import Sampler
 
 
@@ -48,7 +49,7 @@ class Utterances(data.Dataset):
         else:
             raise ValueError
         
-        print('Finished loading {} dataset...'.format(mode))
+        print('Finished loading {} dataset of length {}...'.format(mode, self.num_tokens))
         
         
         
@@ -58,7 +59,7 @@ class Utterances(data.Dataset):
             # fill in speaker id and embedding
             uttrs[0] = sbmt[0]
             uttrs[1] = sbmt[1]
-            # fill in data
+            # fill in data TODO(Rohan, Karthik): iterate over all speaker's audios
             sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2]))
             f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2]))
             if self.mode == 'train':
@@ -172,4 +173,5 @@ def get_loader(hparams):
                                   pin_memory=True,
                                   worker_init_fn=worker_init_fn,
                                   collate_fn=my_collator)
+    # print(len(data_loader))
     return data_loader

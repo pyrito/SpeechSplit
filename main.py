@@ -30,8 +30,10 @@ def main(config):
     # Solver for training
     solver = Solver(vcc_loader, config, hparams)
 
-    solver.train()
-    
+    #solver.train()
+
+    solver.encode_context()
+
         
     
 if __name__ == '__main__':

@@ -34,10 +34,10 @@ hparams = HParams(
     # data loader
     root_dir = 'assets/spmel',
     feat_dir = 'assets/raptf0',
-    batch_size = 16,
+    batch_size = 1,
     mode = 'train',
-    shuffle = True,
-    num_workers = 0,
+    shuffle = False,
+    num_workers = 1,
     samplier = 8,
     
 )

@@ -129,8 +129,8 @@ class Solver(object):
 
         # May need this if looping doesn't work: 
         # for i in max(range(start_iters, self.num_iters), len(self.vcc_loader)):
-
-        for x_real_org, emb_org, f0_org, len_org in self.vcc_loader:
+        print(len(self.vcc_loader))
+        for i, (x_real_org, emb_org, f0_org, len_org) in enumerate(self.vcc_loader):
 
             # =================================================================================== #
             #                             1. Send input data to device                            #
