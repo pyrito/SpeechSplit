@@ -28,7 +28,10 @@ class Utterances(data.Dataset):
         
         manager = Manager()
         meta = manager.list(meta)
-        dataset = manager.list(len(meta)*[None])  # <-- can be shared between processes.
+        dataset_len = 0
+        for speaker in meta:
+            dataset_len += len(speaker[2:])
+        dataset = manager.list(dataset_len*[None])  # <-- can be shared between processes.
         processes = []
         for i in range(0, len(meta), self.step):
             p = Process(target=self.load_data, 
@@ -37,7 +40,6 @@ class Utterances(data.Dataset):
             processes.append(p)
         for p in processes:
             p.join()
-            
         
         # very importtant to do dataset = list(dataset)            
         if mode == 'train':
@@ -54,24 +56,28 @@ class Utterances(data.Dataset):
         
         
     def load_data(self, submeta, dataset, idx_offset, mode):  
+        idx = 0
         for k, sbmt in enumerate(submeta):    
-            uttrs = len(sbmt)*[None]
-            # fill in speaker id and embedding
-            uttrs[0] = sbmt[0]
-            uttrs[1] = sbmt[1]
             # fill in data TODO(Rohan, Karthik): iterate over all speaker's audios
-            sp_tmp = np.load(os.path.join(self.root_dir, sbmt[2]))
-            f0_tmp = np.load(os.path.join(self.feat_dir, sbmt[2]))
-            if self.mode == 'train':
-                sp_tmp = sp_tmp[self.split:, :]
-                f0_tmp = f0_tmp[self.split:]
-            elif self.mode == 'test':
-                sp_tmp = sp_tmp[:self.split, :]
-                f0_tmp = f0_tmp[:self.split]
-            else:
-                raise ValueError
-            uttrs[2] = ( sp_tmp, f0_tmp )
-            dataset[idx_offset+k] = uttrs
+            for sp_f0_file in sbmt[2:]:
+                uttrs = len(sbmt)*[None]
+                # fill in speaker id and embedding
+                uttrs[0] = sbmt[0]
+                uttrs[1] = sbmt[1]
+                sp_tmp = np.load(os.path.join(self.root_dir, sp_f0_file))
+                f0_tmp = np.load(os.path.join(self.feat_dir, sp_f0_file))
+                if self.mode == 'train':
+                    sp_tmp = sp_tmp[self.split:, :]
+                    f0_tmp = f0_tmp[self.split:]
+                elif self.mode == 'test':
+                    sp_tmp = sp_tmp[:self.split, :]
+                    f0_tmp = f0_tmp[:self.split]
+                else:
+                    raise ValueError
+                uttrs[2] = ( sp_tmp, f0_tmp )
+                dataset[idx_offset+idx] = uttrs
+                print(idx_offset+idx)
+                idx += 1
             
                    
         
