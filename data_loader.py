@@ -33,6 +33,7 @@ class Utterances(data.Dataset):
             dataset_len += len(speaker[2:])
         dataset = manager.list(dataset_len*[None])  # <-- can be shared between processes.
         processes = []
+        # TODO(vkarthik, rohan): need to update the offset so that we don't have race conditions
         for i in range(0, len(meta), self.step):
             p = Process(target=self.load_data, 
                         args=(meta[i:i+self.step],dataset,i,mode))  
@@ -134,7 +135,34 @@ class MyCollator(object):
         
         return melsp, spk_emb, pitch, len_org
     
+class EncodeCollator(object):
+    def __init__(self, hparams):
+        assert hparams.batch_size == 1
+        self.min_len_seq = hparams.min_len_seq
+        self.max_len_seq = hparams.max_len_seq
+        self.max_len_pad = hparams.max_len_pad
+    
+    def __call__(self, batch):
+        # TODO(rnair, vkarthik): read through demo code for preprocessing
+        new_batch = []
+        for a, b, c in batch:
+            c_new = c[:, np.newaxis]
+            new_batch.append((a, b, c_new, np.int64(len(a))))
+        batch = new_batch
 
+        a, b, c, d = zip(*batch)
+        
+        # melsp = torch.from_numpy(np.stack(a, axis=0))
+        # spk_emb = torch.from_numpy(np.stack(b, axis=0))
+        # pitch = torch.from_numpy(np.stack(c, axis=0))
+        # len_org = torch.from_numpy(np.stack(d, axis=0))
+
+        melsp = np.stack(a, axis=0)
+        spk_emb = np.stack(b, axis=0)
+        pitch = np.stack(c, axis=0)
+        len_org = np.stack(d, axis=0)
+        
+        return melsp, spk_emb, pitch, len_org
 
     
 class MultiSampler(Sampler):
@@ -165,7 +193,7 @@ def get_loader(hparams):
     
     dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
     
-    my_collator = MyCollator(hparams)
+    my_collator = MyCollator(hparams) if not hparams.encode else EncodeCollator(hparams)
     
     sampler = MultiSampler(len(dataset), hparams.samplier, shuffle=hparams.shuffle)
     
@@ -178,6 +206,7 @@ def get_loader(hparams):
                                   drop_last=True,
                                   pin_memory=True,
                                   worker_init_fn=worker_init_fn,
-                                  collate_fn=my_collator)
+                                  collate_fn=my_collator
+                                  )
     # print(len(data_loader))
     return data_loader

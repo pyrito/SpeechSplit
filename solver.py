@@ -1,3 +1,4 @@
+from torch.utils.tensorboard.summary import hparams
 from model import Generator_3 as Generator
 from model import InterpLnr
 import matplotlib.pyplot as plt
@@ -143,10 +144,10 @@ class Solver(object):
             #     data_iter = iter(data_loader)
             #     x_real_org, emb_org, f0_org, len_org = next(data_iter)
             
-            x_real_org = x_real_org.to(self.device)
-            emb_org = emb_org.to(self.device)
-            len_org = len_org.to(self.device)
-            f0_org = f0_org.to(self.device)
+            # x_real_org = x_real_org.to(self.device)
+            # emb_org = emb_org.to(self.device)
+            # len_org = len_org.to(self.device)
+            # f0_org = f0_org.to(self.device)
             
                     
             # =================================================================================== #
@@ -156,12 +157,25 @@ class Solver(object):
             self.G = self.G.eval()
                         
             # Identity mapping loss
-            x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
-            x_f0_intrp = self.Interp(x_f0, len_org) 
-            f0_org_intrp = quantize_f0_torch(x_f0_intrp[:,:,-1])[0]
-            x_f0_intrp_org = torch.cat((x_f0_intrp[:,:,:-1], f0_org_intrp), dim=-1)
+            # x_f0 = torch.cat((x_real_org, f0_org), dim=-1)
+            # x_f0_intrp = self.Interp(x_f0, len_org) 
+            # f0_org_intrp = quantize_f0_torch(x_f0_intrp[:,:,-1])[0]
+            # x_f0_intrp_org = torch.cat((x_f0_intrp[:,:,:-1], f0_org_intrp), dim=-1)
+
+            print(x_real_org.shape)
+            x_real_pad, _ = pad_seq_to_2(x_real_org, self.hparams.encode_pad_length)
+            # len_org = torch.tensor([val_sub[k][2]]).to(self.device) 
+            f0_org_pad, _ = pad_seq_to_2(f0_org, self.hparams.encode_pad_length) # np.pad(f0_org, (0, 512-len_org[0]), 'constant', constant_values=(0, 0))
+            f0_quantized = quantize_f0_numpy(np.squeeze(f0_org_pad))[0]
+            f0_onehot = f0_quantized[np.newaxis, :, :]
+            f0_org_val = torch.from_numpy(f0_onehot).to(self.device) 
+            x_real_pad = torch.from_numpy(x_real_pad).to(self.device) 
+            x_f0 = torch.cat((x_real_pad, f0_org_val), dim=-1)
+            code_content, code_pitch, code_rhythm, speaker_emb = self.G.forward_encode(x_f0, x_real_pad, emb_org)
+            # g_loss_val = F.mse_loss(x_real_pad, x_identic_val, reduction='sum')
+            # loss_val.append(g_loss_val.item())
             
-            code_content, code_pitch, code_rhythm, speaker_emb = self.G.forward_encode(x_f0_intrp_org, x_real_org, emb_org)
+            # code_content, code_pitch, code_rhythm, speaker_emb = self.G.forward_encode(x_f0_intrp_org, x_real_org, emb_org)
             print(f'content: {code_content}')
 
             et = time.time() - start_time

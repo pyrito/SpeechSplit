@@ -30,6 +30,7 @@ hparams = HParams(
     min_len_seq = 64,
     max_len_seq = 128,
     max_len_pad = 192,
+    encode_pad_length = 2048,
     
     # data loader
     root_dir = 'assets/spmel',
@@ -37,8 +38,9 @@ hparams = HParams(
     batch_size = 1,
     mode = 'train',
     shuffle = False,
-    num_workers = 1,
+    num_workers = 0,
     samplier = 8,
+    encode = True,
     
 )
 
