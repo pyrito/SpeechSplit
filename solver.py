@@ -162,10 +162,13 @@ class Solver(object):
             # f0_org_intrp = quantize_f0_torch(x_f0_intrp[:,:,-1])[0]
             # x_f0_intrp_org = torch.cat((x_f0_intrp[:,:,:-1], f0_org_intrp), dim=-1)
 
-            print(x_real_org.shape)
-            x_real_pad, _ = pad_seq_to_2(x_real_org, self.hparams.encode_pad_length)
+            pad = 8 - ((len_org[0] + 1) % 8)
+            encode_length = len_org[0] + 1 + pad
+            # assert False
+            x_real_pad, _ = pad_seq_to_2(x_real_org, encode_length)
             # len_org = torch.tensor([val_sub[k][2]]).to(self.device) 
-            f0_org_pad, _ = pad_seq_to_2(f0_org, self.hparams.encode_pad_length) # np.pad(f0_org, (0, 512-len_org[0]), 'constant', constant_values=(0, 0))
+            f0_org_pad, _ = pad_seq_to_2(f0_org, encode_length) # np.pad(f0_org, (0, 512-len_org[0]), 'constant', constant_values=(0, 0))
+            assert x_real_pad.shape[1] == f0_org_pad.shape[1]
             f0_quantized = quantize_f0_numpy(np.squeeze(f0_org_pad))[0]
             f0_onehot = f0_quantized[np.newaxis, :, :]
             f0_org_val = torch.from_numpy(f0_onehot).to(self.device) 
