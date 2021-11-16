@@ -63,7 +63,7 @@ class Utterances(data.Dataset):
             for sp_f0_file in sbmt[2:]:
                 uttrs = len(sbmt)*[None]
                 # fill in speaker id and embedding
-                uttrs[0] = sbmt[0]
+                uttrs[0] = sp_f0_file.split('/')[1].split('..')[0]
                 uttrs[1] = sbmt[1]
                 sp_tmp = np.load(os.path.join(self.root_dir, sp_f0_file))
                 f0_tmp = np.load(os.path.join(self.feat_dir, sp_f0_file))
@@ -78,6 +78,7 @@ class Utterances(data.Dataset):
                 uttrs[2] = ( sp_tmp, f0_tmp )
                 dataset[idx_offset+idx] = uttrs
                 print(idx_offset+idx)
+                print(uttrs[0])
                 idx += 1
             
                    
@@ -91,7 +92,7 @@ class Utterances(data.Dataset):
         
         melsp, f0_org = list_uttrs[2]
         
-        return melsp, emb_org, f0_org
+        return melsp, emb_org, f0_org, spk_id_org
     
 
     def __len__(self):
@@ -145,12 +146,12 @@ class EncodeCollator(object):
     def __call__(self, batch):
         # TODO(rnair, vkarthik): read through demo code for preprocessing
         new_batch = []
-        for a, b, c in batch:
+        for a, b, c, id in batch:
             c_new = c[:, np.newaxis]
-            new_batch.append((a, b, c_new, np.int64(len(a))))
+            new_batch.append((a, b, c_new, np.int64(len(a)), id))
         batch = new_batch
 
-        a, b, c, d = zip(*batch)
+        a, b, c, d, id = zip(*batch)
         
         # melsp = torch.from_numpy(np.stack(a, axis=0))
         # spk_emb = torch.from_numpy(np.stack(b, axis=0))
@@ -161,8 +162,9 @@ class EncodeCollator(object):
         spk_emb = np.stack(b, axis=0)
         pitch = np.stack(c, axis=0)
         len_org = np.stack(d, axis=0)
+        id = np.stack(id, axis=0)
         
-        return melsp, spk_emb, pitch, len_org
+        return melsp, spk_emb, pitch, len_org, id
 
     
 class MultiSampler(Sampler):
