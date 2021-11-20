@@ -23,7 +23,7 @@ config_path = paras.config_path
 
 # Load config file for experiment
 print('Loading configure file at',config_path)
-conf = yaml.load(open(config_path,'r'))
+conf = yaml.load(open(config_path,'r'), Loader=yaml.Loader)
 
 # Parameters loading
 print()
@@ -49,8 +49,8 @@ if torch.cuda.is_available():
 
 train_set = create_dataloader(conf['meta_variable']['data_path']+'/train.csv', 
                               **conf['model_parameter'], **conf['training_parameter'], shuffle=True,training=True)
-valid_set = create_dataloader(conf['meta_variable']['data_path']+'/dev.csv',
-                              **conf['model_parameter'], **conf['training_parameter'], shuffle=False,drop_last=True)
+# valid_set = create_dataloader(conf['meta_variable']['data_path']+'/dev.csv',
+#                               **conf['model_parameter'], **conf['training_parameter'], shuffle=False,drop_last=True)
 
 idx2char = {}
 with open(conf['meta_variable']['data_path']+'/idx2chap.csv','r') as f:
@@ -97,7 +97,7 @@ while global_step<total_steps:
         if global_step % valid_step == 0:
             break
 
-    
+    # assert False
     # Validation
     val_loss = []
     val_ler = []

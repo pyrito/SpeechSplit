@@ -91,7 +91,12 @@ def batch_iterator(batch_data, batch_label, listener, speller, optimizer, tf_rat
         criterion = criterion.cuda()
     # Forwarding
     optimizer.zero_grad()
+    # batch_data should be our encoded representation
+    # batch_label should be the corresponding label information
     listner_feature = listener(batch_data)
+    print(f'labels:{batch_label.shape}')
+    print(f"listener_feature.shape: {listner_feature.shape}")
+    assert False
     if is_training:
         raw_pred_seq, _ = speller(listner_feature,ground_truth=batch_label,teacher_force_rate=tf_rate)
     else:
