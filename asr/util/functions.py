@@ -93,14 +93,13 @@ def batch_iterator(batch_data, batch_label, listener, speller, optimizer, tf_rat
     optimizer.zero_grad()
     # batch_data should be our encoded representation
     # batch_label should be the corresponding label information
-    listner_feature = listener(batch_data)
     print(f'labels:{batch_label.shape}')
-    print(f"listener_feature.shape: {listner_feature.shape}")
-    assert False
+    print(f"batch_data.shape: {batch_data.shape}")
+    # assert False
     if is_training:
-        raw_pred_seq, _ = speller(listner_feature,ground_truth=batch_label,teacher_force_rate=tf_rate)
+        raw_pred_seq, _ = speller(batch_data,ground_truth=batch_label,teacher_force_rate=tf_rate)
     else:
-        raw_pred_seq, _ = speller(listner_feature,ground_truth=None,teacher_force_rate=0)
+        raw_pred_seq, _ = speller(batch_data,ground_truth=None,teacher_force_rate=0)
 
     pred_y = (torch.cat([torch.unsqueeze(each_y,1) for each_y in raw_pred_seq],1)[:,:max_label_len,:]).contiguous()
 

@@ -26,7 +26,11 @@ def load_dataset(data_path):
 # Return new_x : a np array of shape (len(x), padded_timestep, feature)
 def ZeroPadding(x,pad_len):
     features = x[0].shape[-1]
+    print(pad_len)
     new_x = np.zeros((len(x),pad_len,features))
+    print(new_x.shape)
+    for thing in x:
+        print(thing.shape)
     for idx,ins in enumerate(x):
         new_x[idx,:len(ins),:] = ins
     return new_x
@@ -109,6 +113,8 @@ class LibrispeechDataset(Dataset):
                 for i in range(self.batch_size):
                     X.append(get_data(self.data_table,index+i))
                     Y.append([int(v) for v in self.data_table.loc[index+i]['label'].split(' ')[1:]])
+                print(len(X[0]))
+                print(self.time_scale)
                 pad_len = len(X[0]) if (len(X[0]) % self.time_scale) == 0 else len(X[0])+(self.time_scale-len(X[0])%self.time_scale)
                 if self.training:
                     onehot_len = min(max([len(y) for y in Y])+1,self.max_label_len)

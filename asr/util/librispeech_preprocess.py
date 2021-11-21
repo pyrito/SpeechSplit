@@ -69,6 +69,16 @@ def traverse(root,path,search_fix='.flac',return_label=False):
                             f_list.append(file_path)   
     return f_list
 
+def get_labels_for_files(ground_truth_files, librispeech_root):
+    labels = []
+    for gt_file in ground_truth_files:
+        step_1 = gt_file.split('-')[0]
+        step_2 = gt_file.split('-')[1]
+        with open(os.path.join(librispeech_root, step_1, step_2, gt_file)+'.trans.txt') as f:
+            for line in f:
+                labels.append(' '.join(line[:-1].split(' ')[1:]))
+    return labels
+
 def save_and_get_encoded_tensors(path, match, save_root):
     f_list = []
     ground_truth_files = set([])
@@ -78,15 +88,14 @@ def save_and_get_encoded_tensors(path, match, save_root):
                 encoded = pickle.load(f)
             for k,v in sorted(encoded.items()):
                 file_name = k + '.npy'
-                ground_truth_file = '-'.join(file_name.split('-')[:-1]) + '.trans.txt'
+                ground_truth_file = '-'.join(file_name.split('-')[:-1])
                 print(k)
                 print(ground_truth_file)
                 full_dst_path = os.path.join(save_root, file_name)
-                np.save(full_dst_path, v.detach().numpy())
+                np.save(full_dst_path, np.squeeze(v.detach().numpy(), axis=0))
                 f_list.append(full_dst_path)
                 ground_truth_files.add(ground_truth_file)
 
-    print(f_list, sorted(list(ground_truth_files)))
     return f_list, sorted(list(ground_truth_files))
     
 
@@ -103,11 +112,11 @@ print('Preparing Training Dataset...',flush=True)
 # Read the pickle file, save the individual tensors into some file, return a list of these files.
 # Using the file name that I see in the pickle file, figure out the labels, use the same code
 # Write everything out accordingly
-encoded_save_path = "/home/vkarthik/SpeechSplit/assets"
+encoded_save_path = "/home/vkarthik/SpeechSplit/assets/encoded"
 tr_file_list, ground_truth_files = save_and_get_encoded_tensors(encoded_path, "encoded-train.pkl", encoded_save_path)          
-tr_text = traverse(root,train_path,return_label=True)
+tr_text = get_labels_for_files(ground_truth_files, os.path.join(root, 'dev-clean'))
 
-assert False
+assert len(tr_file_list) == len(tr_text)
 
 # Create char mapping
 char_map = {}
