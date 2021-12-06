@@ -15,7 +15,7 @@ from torch.utils.data.sampler import Sampler
 class Utterances(data.Dataset):
     """Dataset class for the Utterances dataset."""
 
-    def __init__(self, root_dir, feat_dir, mode):
+    def __init__(self, root_dir, feat_dir, mode, encode_mode):
         """Initialize and preprocess the Utterances dataset."""
         self.root_dir = root_dir
         self.feat_dir = feat_dir
@@ -23,7 +23,7 @@ class Utterances(data.Dataset):
         self.step = 20
         self.split = 0
         
-        metaname = os.path.join(self.root_dir, "train.pkl")
+        metaname = os.path.join(self.root_dir, f"{encode_mode}.pkl")
         meta = pickle.load(open(metaname, "rb"))
         
         manager = Manager()
@@ -193,7 +193,7 @@ class MultiSampler(Sampler):
 def get_loader(hparams):
     """Build and return a data loader."""
     
-    dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode)
+    dataset = Utterances(hparams.root_dir, hparams.feat_dir, hparams.mode, hparams.encode_mode)
     
     my_collator = MyCollator(hparams) if not hparams.encode else EncodeCollator(hparams)
     

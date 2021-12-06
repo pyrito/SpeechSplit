@@ -38,6 +38,9 @@ def main(config):
     
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+
+    # Dataset to encode
+    parser.add_argument('--encode-mode', type=str, default="train", help='train, dev, or test')
    
     # Training configuration.
     parser.add_argument('--num_iters', type=int, default=1000000, help='number of total iterations')
@@ -61,6 +64,8 @@ if __name__ == '__main__':
     parser.add_argument('--model_save_step', type=int, default=1000)
 
     config = parser.parse_args()
+    hparams.encode_mode = config.encode_mode
+    
     print(config)
     print(hparams_debug_string())
     main(config)

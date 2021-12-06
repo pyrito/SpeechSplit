@@ -1,6 +1,14 @@
 import os
 import pickle
 import numpy as np
+import argparse
+
+parser = argparse.ArgumentParser()
+
+# Preprocess configuration.
+parser.add_argument('--mode', type=str, default="train", help='train, dev, or test')
+args = parser.parse_args()
+print(args)
 
 rootDir = 'assets/spmel'
 dirName, subdirList, _ = next(os.walk(rootDir))
@@ -30,5 +38,5 @@ for speaker in sorted(subdirList):
         utterances.append(os.path.join(speaker,fileName))
     speakers.append(utterances)
     
-with open(os.path.join(rootDir, 'train.pkl'), 'wb') as handle:
+with open(os.path.join(rootDir, f'{args.mode}.pkl'), 'wb') as handle:
     pickle.dump(speakers, handle)    

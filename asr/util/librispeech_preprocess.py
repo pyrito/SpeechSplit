@@ -18,8 +18,8 @@ parser.add_argument('root', metavar='root', type=str,
 parser.add_argument('tr_sets', metavar='tr_sets', type=str, nargs='+',
                      help='Training datasets to process in LibriSpeech. (e.g. train-clean-100/)')
 
-parser.add_argument('--encoded_path', metavar='encoded_path', type=str, default='',
-                    help='Path to encoded pickle files')
+# parser.add_argument('--encoded_path', metavar='encoded_path', type=str, default='',
+#                     help='Path to encoded pickle files')
 
 parser.add_argument('--dev_sets', metavar='dev_sets', type=str, nargs='+', default=[] ,
                      help='Validation datasets to process in LibriSpeech. (e.g. dev-clean/)')
@@ -47,7 +47,7 @@ n_jobs = paras.n_jobs
 n_filters = paras.n_filters
 win_size = paras.win_size
 norm_x = paras.norm_x
-encoded_path = paras.encoded_path
+# encoded_path = paras.encoded_path
 
 def traverse(root,path,search_fix='.flac',return_label=False):
     f_list = []
@@ -74,7 +74,7 @@ def get_labels_for_files(ground_truth_files, librispeech_root):
     for gt_file in ground_truth_files:
         step_1 = gt_file.split('-')[0]
         step_2 = gt_file.split('-')[1]
-        with open(os.path.join(librispeech_root, step_1, step_2, gt_file)+'.trans.txt') as f:
+        with open(os.path.join(librispeech_root, step_1, gt_file)+'.trans.txt') as f:
             for line in f:
                 labels.append(' '.join(line[:-1].split(' ')[1:]))
     return labels
@@ -111,10 +111,12 @@ print('Preparing Training Dataset...',flush=True)
 
 # Read the pickle file, save the individual tensors into some file, return a list of these files.
 # Using the file name that I see in the pickle file, figure out the labels, use the same code
-# Write everything out accordingly
-encoded_save_path = "/home/vkarthik/SpeechSplit/assets/encoded"
-tr_file_list, ground_truth_files = save_and_get_encoded_tensors(encoded_path, "encoded-train.pkl", encoded_save_path)          
-tr_text = get_labels_for_files(ground_truth_files, os.path.join(root, 'dev-clean'))
+# Write everything out 
+# print(train_path)
+train_dir = os.path.join(root, train_path[0])
+train_encoded_save_path = os.path.join(train_dir, 'encoded')
+tr_file_list, ground_truth_files = save_and_get_encoded_tensors(train_dir, "encoded-train.pkl", train_encoded_save_path)          
+tr_text = get_labels_for_files(ground_truth_files, train_dir)
 
 assert len(tr_file_list) == len(tr_text)
 
@@ -165,92 +167,70 @@ with open(root+file_name,'w') as f:
         f.write('\n')
 
 print()
-# print('Preparing Validation Dataset...',flush=True)
+print('Preparing Validation Dataset...',flush=True)
 
-# dev_file_list = traverse(root,dev_path,search_fix='.fb'+str(n_filters))
-# dev_text = traverse(root,dev_path,return_label=True)
+dev_dir = os.path.join(root, dev_path[0])
+dev_encoded_save_path = os.path.join(dev_dir, 'encoded')
+dev_file_list, ground_truth_files = save_and_get_encoded_tensors(dev_dir, "encoded-dev.pkl", dev_encoded_save_path)          
+dev_text = get_labels_for_files(ground_truth_files, dev_dir)
 
-# X = []
-# for f in dev_file_list:
-#     X.append(np.load(f))
+assert len(dev_file_list) == len(dev_text)
 
-# # Normalize X
-# if norm_x:
-#     results = Parallel(n_jobs=n_jobs,backend="threading")(delayed(norm)(i,mean_x,std_x) for i in tqdm(dev_file_list))
+# text to index sequence
+tmp_list = []
+for text in dev_text:
+    tmp = []
+    for char in text:
+        tmp.append(char_map[char])
+    tmp_list.append(tmp)
+dev_text = tmp_list
+del tmp_list
 
+# write dataset
+file_name = 'dev.csv'
 
-# # Sort data by signal length (long to short)
-# audio_len = [len(x) for x in X]
+print('Writing dataset to '+root+file_name+'...',flush=True)
 
-# dev_file_list = [dev_file_list[idx] for idx in reversed(np.argsort(audio_len))]
-# dev_text = [dev_text[idx] for idx in reversed(np.argsort(audio_len))]
+with open(root+file_name,'w') as f:
+    f.write('idx,input,label\n')
+    for i in range(len(dev_file_list)):
+        f.write(str(i)+',')
+        f.write(dev_file_list[i]+',')
+        for char in dev_text[i]:
+            f.write(' '+str(char))
+        f.write('\n')
 
-# # text to index sequence
-# tmp_list = []
-# for text in dev_text:
-#     tmp = []
-#     for char in text:
-#         tmp.append(char_map[char])
-#     tmp_list.append(tmp)
-# dev_text = tmp_list
-# del tmp_list
+print()
+print('Preparing Testing Dataset...',flush=True)
 
-# # write dataset
-# file_name = 'dev.csv'
+tt_dir = os.path.join(root, test_path[0])
+tt_encoded_save_path = os.path.join(tt_dir, 'encoded')
+tt_file_list, ground_truth_files = save_and_get_encoded_tensors(tt_dir, "encoded-test.pkl", tt_encoded_save_path)          
+tt_text = get_labels_for_files(ground_truth_files, tt_dir)
 
-# print('Writing dataset to '+root+file_name+'...',flush=True)
+assert len(tt_file_list) == len(tt_text)
 
-# with open(root+file_name,'w') as f:
-#     f.write('idx,input,label\n')
-#     for i in range(len(dev_file_list)):
-#         f.write(str(i)+',')
-#         f.write(dev_file_list[i]+',')
-#         for char in dev_text[i]:
-#             f.write(' '+str(char))
-#         f.write('\n')
+# text to index sequence
+tmp_list = []
+for text in tt_text:
+    tmp = []
+    for char in text:
+        tmp.append(char_map[char])
+    tmp_list.append(tmp)
+tt_text = tmp_list
+del tmp_list
 
-# print()
-# print('Preparing Testing Dataset...',flush=True)
+# write dataset
+file_name = 'test.csv'
 
-# test_file_list = traverse(root,test_path,search_fix='.fb'+str(n_filters))
-# tt_text = traverse(root,test_path,return_label=True)
+print('Writing dataset to '+root+file_name+'...',flush=True)
 
-# X = []
-# for f in test_file_list:
-#     X.append(np.load(f))
-
-# # Normalize X
-# if norm_x:
-#     results = Parallel(n_jobs=n_jobs,backend="threading")(delayed(norm)(i,mean_x,std_x) for i in tqdm(test_file_list))
-
-
-# # Sort data by signal length (long to short)
-# audio_len = [len(x) for x in X]
-
-# test_file_list = [test_file_list[idx] for idx in reversed(np.argsort(audio_len))]
-# tt_text = [tt_text[idx] for idx in reversed(np.argsort(audio_len))]
-
-# # text to index sequence
-# tmp_list = []
-# for text in tt_text:
-#     tmp = []
-#     for char in text:
-#         tmp.append(char_map[char])
-#     tmp_list.append(tmp)
-# tt_text = tmp_list
-# del tmp_list
-
-# # write dataset
-# file_name = 'test.csv'
-
-# print('Writing dataset to '+root+file_name+'...',flush=True)
-
-# with open(root+file_name,'w') as f:
-#     f.write('idx,input,label\n')
-#     for i in range(len(test_file_list)):
-#         f.write(str(i)+',')
-#         f.write(test_file_list[i]+',')
-#         for char in tt_text[i]:
-#             f.write(' '+str(char))
-#         f.write('\n')
+with open(root+file_name,'w') as f:
+    f.write('idx,input,label\n')
+    for i in range(len(tt_file_list)):
+        f.write(str(i)+',')
+        f.write(tt_file_list[i]+',')
+        for char in tt_text[i]:
+            f.write(' '+str(char))
+        f.write('\n')
 

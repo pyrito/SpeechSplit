@@ -93,8 +93,8 @@ def batch_iterator(batch_data, batch_label, listener, speller, optimizer, tf_rat
     optimizer.zero_grad()
     # batch_data should be our encoded representation
     # batch_label should be the corresponding label information
-    print(f'labels:{batch_label.shape}')
-    print(f"batch_data.shape: {batch_data.shape}")
+    # print(f'labels:{batch_label.shape}')
+    # print(f"batch_data.shape: {batch_data.shape}")
     # assert False
     if is_training:
         raw_pred_seq, _ = speller(batch_data,ground_truth=batch_label,teacher_force_rate=tf_rate)

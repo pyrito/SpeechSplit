@@ -10,14 +10,23 @@ from pysptk import sptk
 from utils import butter_highpass
 from utils import speaker_normalization
 from utils import pySTFT
-    
+import argparse
+
+
 
 mel_basis = mel(16000, 1024, fmin=90, fmax=7600, n_mels=80).T
 min_level = np.exp(-100 / 20 * np.log(10))
 b, a = butter_highpass(30, 16000, order=5)
  
+parser = argparse.ArgumentParser()
+
+# Preprocess configuration.
+parser.add_argument('--mode', type=str, default="train", help='train, dev, or test')
+args = parser.parse_args()
+print(args)
+
 # Modify as needed
-rootDir = 'assets/LibriSpeech/dev-clean'
+rootDir = f'/home/vkarthik/LibriSpeech_subset/{args.mode}'
 targetDir_f0 = 'assets/raptf0'
 targetDir = 'assets/spmel'
 spk2genFile = 'assets/ls_spk2gen.pkl'

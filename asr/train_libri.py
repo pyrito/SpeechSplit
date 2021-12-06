@@ -49,8 +49,8 @@ if torch.cuda.is_available():
 
 train_set = create_dataloader(conf['meta_variable']['data_path']+'/train.csv', 
                               **conf['model_parameter'], **conf['training_parameter'], shuffle=True,training=True)
-# valid_set = create_dataloader(conf['meta_variable']['data_path']+'/dev.csv',
-#                               **conf['model_parameter'], **conf['training_parameter'], shuffle=False,drop_last=True)
+valid_set = create_dataloader(conf['meta_variable']['data_path']+'/dev.csv',
+                              **conf['model_parameter'], **conf['training_parameter'], shuffle=False,drop_last=True)
 
 idx2char = {}
 with open(conf['meta_variable']['data_path']+'/idx2chap.csv','r') as f:
@@ -116,18 +116,18 @@ while global_step<total_steps:
 
     
     # Generate Example
-    if conf['model_parameter']['bucketing']:
-        feature = listener(Variable(batch_data.float()).squeeze(0).cuda())
-        batch_label = batch_label.squeeze(0)
-    else:
-        feature = listener(Variable(batch_data.float()).cuda())
-    pred_seq, attention_score = speller(feature)
+    # if conf['model_parameter']['bucketing']:
+    #     feature = speller(Variable(batch_data.float()).squeeze(0))
+    #     batch_label = batch_label.squeeze(0)
+    # else:
+    #     feature = speller(Variable(batch_data.float()))
+    pred_seq, attention_score = speller(batch_data.float().squeeze(0), ground_truth=None,teacher_force_rate=0)
     
     pred_seq = [char.cpu() for char in pred_seq]
     for t in range(len(attention_score)):
         for h in range(len(attention_score[t])):
             attention_score[t][h] = attention_score[t][h].cpu()
-    del feature
+    # del feature
     
     
     pd = {i:'' for i in range(conf['training_parameter']['batch_size'])}
@@ -139,7 +139,7 @@ while global_step<total_steps:
     pd = [pd[i] for i in range(conf['training_parameter']['batch_size'])]
 
     gt = []
-    for line in (torch.max(batch_label,dim=-1)[1]).numpy():
+    for line in (torch.max(batch_label.squeeze(0),dim=-1)[1]).numpy():
         tmp = ''
         for idx in line:
             if idx == 0: continue
@@ -155,20 +155,20 @@ while global_step<total_steps:
     if not record_gt_text:
         record_gt_text = True
         
-    att_map = {i:[] for i in range(conf['training_parameter']['batch_size'])}
-    num_head = len(attention_score[0])
-    for i in range(conf['training_parameter']['batch_size']):
-        for j in range(num_head):
-            att_map[i].append([])
-    for t,head_score in enumerate(attention_score):
-        for h,att_score in enumerate(head_score):
-            for idx,att in enumerate(att_score.data.numpy()):
-                att_map[idx][h].append(att)
-    for i in range(conf['training_parameter']['batch_size']):
-        for j in range(num_head):
-            m = np.repeat(np.expand_dims(np.array(att_map[i][j]),0),3,axis=0)
-            log_writer.add_image('attention_'+str(i)+'_head_'+str(j),
-                                 torch.FloatTensor(m[:,:len(pd[i]),:]), global_step)
+    # att_map = {i:[] for i in range(conf['training_parameter']['batch_size'])}
+    # num_head = len(attention_score[0])
+    # for i in range(conf['training_parameter']['batch_size']):
+    #     for j in range(num_head):
+    #         att_map[i].append([])
+    # for t,head_score in enumerate(attention_score):
+    #     for h,att_score in enumerate(head_score):
+    #         for idx,att in enumerate(att_score.data.numpy()):
+    #             att_map[idx][h].append(att)
+    # for i in range(conf['training_parameter']['batch_size']):
+    #     for j in range(num_head):
+    #         m = np.repeat(np.expand_dims(np.array(att_map[i][j]),0),3,axis=0)
+    #         log_writer.add_image('attention_'+str(i)+'_head_'+str(j),
+    #                              torch.FloatTensor(m[:,:len(pd[i]),:]), global_step)
     
     # Checkpoint
     if best_ler >= sum(val_ler)/len(val_ler):

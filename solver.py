@@ -169,7 +169,7 @@ class Solver(object):
             et = str(datetime.timedelta(seconds=et))[:-7]
             log = "Elapsed [{}],  Audio file[{}/{}]".format(et, i+1, len(self.vcc_loader))
             print(log)
-        with open('assets/encoded.pkl', 'wb') as f:
+        with open(f'assets/encoded-{self.hparams.encode_mode}.pkl', 'wb') as f:
             pickle.dump(encoded_audio, f)
 
 
