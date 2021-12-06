@@ -129,6 +129,7 @@ class Solver(object):
         # May need this if looping doesn't work: 
         # for i in max(range(start_iters, self.num_iters), len(self.vcc_loader)):
         print(len(self.vcc_loader))
+        count = 0
         for i, (x_real_org, emb_org, f0_org, len_org, id_org) in enumerate(self.vcc_loader):
 
             # =================================================================================== #
@@ -169,8 +170,12 @@ class Solver(object):
             et = str(datetime.timedelta(seconds=et))[:-7]
             log = "Elapsed [{}],  Audio file[{}/{}]".format(et, i+1, len(self.vcc_loader))
             print(log)
-        with open(f'assets/encoded-{self.hparams.encode_mode}.pkl', 'wb') as f:
-            pickle.dump(encoded_audio, f)
+            count += 1
+            if count % 100 == 0:
+                with open(f'assets/encoded-{self.hparams.encode_mode}-{count}.pkl', 'wb') as f:
+                    pickle.dump(encoded_audio, f)
+                del encoded_audio
+                encoded_audio = {}
 
 
 
